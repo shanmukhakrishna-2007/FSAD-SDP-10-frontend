@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Output/temp files
+dev_output*.txt
+frontend_log*.txt
+frontend_startup.log
+v2_*.txt
+
+# Environment
+.env
+.env.local
+.env.production.local
