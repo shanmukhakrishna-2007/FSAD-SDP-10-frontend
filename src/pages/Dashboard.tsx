@@ -5,7 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   TrendingUp, Users, BookOpen, Award, 
   ArrowRight, Sparkles, Target, BarChart3, 
-  Compass, Zap, Briefcase, ShieldCheck 
+  Compass, Zap, Briefcase, ShieldCheck,
+  Code, Trophy
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -262,10 +263,11 @@ export default function Dashboard() {
         {/* Secondary Actions */}
         {[
           { label: "Intelligence Library", desc: "Curate global professional learning", icon: BookOpen, path: "/courses", color: "text-blue-400" },
-          { label: "Verified Credentials", desc: "Manage academic achievements", icon: Award, path: "/my-certificates", color: "text-amber-400" },
+          { label: "Coding Arena", desc: "Solve problems & earn XP", icon: Code, path: "/problems", color: "text-red-400" },
+          { label: "Global Contests", desc: "Compete in weekly challenges", icon: Trophy, path: "/contests", color: "text-amber-400" },
           { label: "Elite Quizzes", desc: "Simulate top-tier interviews", icon: Zap, path: "/quizzes", color: "text-purple-400" },
+          { label: "Jobs & Network", desc: "Real internships and jobs", icon: Briefcase, path: "/applications", color: "text-emerald-400" },
           { label: "Elite Prep Center", desc: "Simulations & Company Intel", icon: ShieldCheck, path: "/prep", color: "text-orange-400" },
-          { label: "Network Access", desc: "Connect with enterprise nodes", icon: Briefcase, path: "/applications", color: "text-emerald-400" },
         ].map((action, i) => (
           <motion.div
             key={i}
