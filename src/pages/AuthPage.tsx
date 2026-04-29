@@ -1,29 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, ShieldCheck, Cpu, KeyRound, RefreshCw, ArrowLeft, Sparkles } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "../components/ui/Logo";
-import { getPasswordStrength } from "@/lib/useFormValidation";
 
 type AuthView = "login" | "register" | "mfa" | "forgot" | "reset" | "verify-success";
-
-// ── Inline Validation Helpers ────────────────────────────
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const passwordMinLength = 8;
-const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
-function validateEmail(v: string) { return !v ? "Email is required" : !emailRegex.test(v) ? "Enter a valid email" : null; }
-function validatePassword(v: string) { return !v ? "Password is required" : v.length < passwordMinLength ? "Min 8 characters" : !passwordPattern.test(v) ? "Need uppercase, lowercase, number & special char" : null; }
-function validateName(v: string) { return !v ? "Name is required" : v.trim().length < 2 ? "At least 2 characters" : null; }
-function validateOtp(v: string) { return !v ? "OTP required" : v.length !== 6 ? "Must be 6 digits" : null; }
-
-/** Small inline error display */
-function FieldError({ msg }: { msg: string | null }) {
-  if (!msg) return null;
-  return <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-[10px] font-black uppercase tracking-widest ml-4 mt-1">{msg}</motion.p>;
-}
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -33,7 +16,6 @@ export default function AuthPage() {
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -41,10 +23,6 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-
-  const touch = (field: string) => setTouched(p => ({ ...p, [field]: true }));
-  const pwStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   // Handle MFA persistence and deep links
   useEffect(() => {
@@ -72,10 +50,6 @@ export default function AuthPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ email: true, password: true });
-    const eErr = validateEmail(email);
-    const pErr = !password ? "Password is required" : null;
-    if (eErr || pErr) { setError(eErr || pErr || ""); return; }
     setError(""); setSuccess(""); setLoading(true);
     try {
       const data = await apiPost<{ message: string; accessToken: string; role: string; mfaRequired: boolean }>("/api/auth/login", { 
@@ -99,12 +73,6 @@ export default function AuthPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ name: true, email: true, password: true, confirmPassword: true });
-    const nErr = validateName(name);
-    const eErr = validateEmail(email);
-    const pErr = validatePassword(password);
-    const cErr = !confirmPassword ? "Confirm password" : confirmPassword !== password ? "Passwords do not match" : null;
-    if (nErr || eErr || pErr || cErr) { setError(nErr || eErr || pErr || cErr || ""); return; }
     setError(""); setSuccess(""); setLoading(true);
     try {
       const data = await apiPost<{ message: string }>("/api/auth/register", { name, email, password });
@@ -119,9 +87,6 @@ export default function AuthPage() {
 
   const handleMfa = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ otp: true });
-    const oErr = validateOtp(otp);
-    if (oErr) { setError(oErr); return; }
     setError(""); setLoading(true);
     try {
       const data = await apiPost<{ role: string; accessToken: string }>("/api/auth/verify-mfa", { email, otp });
@@ -137,9 +102,6 @@ export default function AuthPage() {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ email: true });
-    const eErr = validateEmail(email);
-    if (eErr) { setError(eErr); return; }
     setError(""); setSuccess(""); setLoading(true);
     try {
       const data = await apiPost<{ message: string }>("/api/auth/forgot-password", { email });
@@ -153,9 +115,6 @@ export default function AuthPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ newPassword: true });
-    const pErr = validatePassword(newPassword);
-    if (pErr) { setError(pErr); return; }
     setError(""); setSuccess(""); setLoading(true);
     try {
       const data = await apiPost<{ message: string }>("/api/auth/reset-password", { token: resetToken, newPassword });
@@ -174,10 +133,8 @@ export default function AuthPage() {
     setSuccess("");
     setEmail("");
     setPassword("");
-    setConfirmPassword("");
     setOtp("");
     setNewPassword("");
-    setTouched({});
     setView(newView);
   };
 
@@ -218,9 +175,8 @@ export default function AuthPage() {
                 <input type="email" required placeholder="you@example.com"
                   autoComplete="off"
                   className="w-full h-16 bg-white/[0.03] border border-glass-border rounded-2xl pl-16 pr-6 text-sm font-bold text-text-primary focus:border-accent/40 focus:bg-accent/5 focus:shadow-[0_0_30px_rgba(197,160,89,0.05)] outline-none transition-all placeholder:text-text-tertiary/50"
-                  value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => touch("email")} />
+                  value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <FieldError msg={touched.email ? validateEmail(email) : null} />
             </div>
             <div className="space-y-2">
               <label className="text-[9px] font-black uppercase tracking-widest text-text-tertiary ml-4">Password</label>
@@ -229,9 +185,8 @@ export default function AuthPage() {
                 <input type="password" required placeholder="••••••••"
                   autoComplete="new-password"
                   className="w-full h-16 bg-white/[0.03] border border-glass-border rounded-2xl pl-16 pr-6 text-sm font-bold text-text-primary focus:border-accent/40 focus:bg-accent/5 focus:shadow-[0_0_30px_rgba(197,160,89,0.05)] outline-none transition-all placeholder:text-text-tertiary/50"
-                  value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => touch("password")} />
+                  value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
-              <FieldError msg={touched.password && !password ? "Password is required" : null} />
             </div>
 
             {error && (
@@ -273,9 +228,8 @@ export default function AuthPage() {
                 <User className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent transition-colors" size={18} />
                 <input type="text" required placeholder="Full Name"
                   className="w-full h-16 bg-white/[0.03] border border-white/5 rounded-2xl pl-16 pr-6 text-sm font-bold text-white focus:border-accent/40 focus:bg-accent/5 focus:shadow-[0_0_30px_rgba(197,160,89,0.05)] outline-none transition-all placeholder:text-text-tertiary/50"
-                  value={name} onChange={(e) => setName(e.target.value)} onBlur={() => touch("name")} />
+                  value={name} onChange={(e) => setName(e.target.value)} />
               </div>
-              <FieldError msg={touched.name ? validateName(name) : null} />
             </div>
             <div className="space-y-2">
               <label className="text-[9px] font-black uppercase tracking-widest text-text-tertiary ml-4">Access Email</label>
@@ -283,9 +237,8 @@ export default function AuthPage() {
                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent transition-colors" size={18} />
                 <input type="email" required placeholder="name@nexus.com"
                   className="w-full h-16 bg-white/[0.03] border border-white/5 rounded-2xl pl-16 pr-6 text-sm font-bold text-white focus:border-accent/40 focus:bg-accent/5 focus:shadow-[0_0_30px_rgba(197,160,89,0.05)] outline-none transition-all placeholder:text-text-tertiary/50"
-                  value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => touch("regEmail")} />
+                  value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
-              <FieldError msg={touched.regEmail ? validateEmail(email) : null} />
             </div>
             <div className="space-y-2">
               <label className="text-[9px] font-black uppercase tracking-widest text-text-tertiary ml-4">Secure Key</label>
@@ -293,30 +246,8 @@ export default function AuthPage() {
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent transition-colors" size={18} />
                 <input type="password" required placeholder="••••••••"
                   className="w-full h-16 bg-white/[0.03] border border-white/5 rounded-2xl pl-16 pr-6 text-sm font-bold text-white focus:border-accent/40 focus:bg-accent/5 focus:shadow-[0_0_30px_rgba(197,160,89,0.05)] outline-none transition-all placeholder:text-text-tertiary/50"
-                  value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => touch("regPassword")} />
+                  value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
-              {/* Password Strength Indicator */}
-              {password && (
-                <div className="px-4 space-y-2">
-                  <div className="flex gap-1.5">
-                    {[0,1,2,3,4].map(i => (
-                      <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= pwStrength.score ? pwStrength.color : 'bg-white/10'}`} />
-                    ))}
-                  </div>
-                  <p className={`text-[9px] font-black uppercase tracking-widest ${pwStrength.score >= 3 ? 'text-emerald-400' : pwStrength.score >= 2 ? 'text-yellow-400' : 'text-red-400'}`}>{pwStrength.label}</p>
-                </div>
-              )}
-              <FieldError msg={touched.regPassword ? validatePassword(password) : null} />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[9px] font-black uppercase tracking-widest text-text-tertiary ml-4">Confirm Secure Key</label>
-              <div className="relative group">
-                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent transition-colors" size={18} />
-                <input type="password" required placeholder="••••••••"
-                  className="w-full h-16 bg-white/[0.03] border border-white/5 rounded-2xl pl-16 pr-6 text-sm font-bold text-white focus:border-accent/40 focus:bg-accent/5 focus:shadow-[0_0_30px_rgba(197,160,89,0.05)] outline-none transition-all placeholder:text-text-tertiary/50"
-                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onBlur={() => touch("confirmPassword")} />
-              </div>
-              <FieldError msg={touched.confirmPassword && confirmPassword && confirmPassword !== password ? "Passwords do not match" : null} />
             </div>
 
             {error && (
