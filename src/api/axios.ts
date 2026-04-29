@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: API_URL,
     withCredentials: true, // Required for HttpOnly cookies (refreshToken)
 });
 
@@ -40,7 +40,7 @@ api.interceptors.response.use(
             try {
                 // Attempt to refresh the token using the HttpOnly refresh cookie
                 const response = await axios.post(
-                    `${API_BASE_URL}/api/auth/refresh`,
+                    `${API_URL}/api/auth/refresh`,
                     {},
                     { withCredentials: true }
                 );
