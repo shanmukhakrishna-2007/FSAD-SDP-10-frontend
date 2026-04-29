@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ui/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
 import Layout from "./components/ui/Layout";
 import './index.css';
 import { Sparkles } from "lucide-react";
@@ -48,6 +49,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -86,6 +88,7 @@ function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      </ToastProvider>
      </AuthProvider>
     </ThemeProvider>
   )
